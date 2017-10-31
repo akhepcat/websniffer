@@ -19,11 +19,10 @@ Lots could be done to clean this up, but i'll leave that to you, dear visitor.
 * cgi/rtpanalysis.cgi	- a CGI inteface into voice analysis of captured data  
 * cgi/websniff.cgi	- the CGI interface for controlling the packet capture and data file management  
 
+--
 
 These files were not created by me, and I have lost the attribution for them.  
 Please contact me if they're yours!  
-
---
 
 * bin/analyseCalls.sh	- this is a manual method of parsing captured files for voice quality issues, and calls the following two scripts:  
  -- bin/qual.pl  
