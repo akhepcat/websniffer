@@ -1,0 +1,154 @@
+#!/bin/bash
+
+FILTER=broadworks
+
+# Where we store the capture files
+DATAMOUNT="/data"
+
+# Maximum size of the capture file
+MBYTES="512"
+
+# Nothing to see...
+#####################################################
+PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin
+
+# Array of system interfaces to check
+declare -a SYSIFACES
+
+# Array of real interfaces to use for sniffing (raw, vlan, etc)
+declare -a REALIFACES
+
+#will we need to load the 802.1q module?
+NEEDVLANMOD=0
+
+MTD="$(mount | grep ${DATAMOUNT})"
+if [ -z "${MTD}" ]; then
+	echo "${DATAMOUNT} partition not mounted, aborting"
+	exit 1
+fi
+touch ${DATAMOUNT}/keep >/dev/null 2>&1
+STATUS=$?                       
+if [ 0 -lt ${STATUS} ];         
+then                            
+	echo "READ-ONLY mountpoint detected. Bailing"
+	exit 1
+fi
+if [ -r ${DATAMOUNT}/.sniffer/halt ]; then
+#	echo "forced halt"
+	exit 0
+fi
+
+# Check for 'management' interfaces
+DEFIF="$(netstat -rn)"
+DEFIF="${DEFIF//*UG*eth/eth}"
+DEFIF="${DEFIF:-^$}"
+
+# get a count of available ports, except for management, for sizing the datafile counts. 
+#  Include any existing VLANS, but exclude their parent physical interfaces.
+SYSIFACES="$(ip link show | grep 'eth.*UP' | grep -v \"${DEFIF}\" | cut -f 2 -d: | cut -f 1 -d@)"
+VLANPARENTS="$(ip link show | grep @ | cut -f 2 -d: | cut -f 2 -d@ | sort -u )"
+for i in ${VLANPARENTS}; do 
+	SYSIFACES="$(for v in ${SYSIFACES}; do echo ${v} | egrep -vw \"${i}\$\" ; done)"
+done
+
+# Make sure we only include 'up' interfaces in the list
+declare -a TEMPIFS
+for IFACE in ${SYSIFACES}; do
+	link="$(ethtool ${IFACE} | grep Link)"
+	link="${link##*no*}"
+	if [ -n "${link}" ]; then
+		TEMPIFS[${#TEMPIFS[*]}]="${IFACE}"
+	fi
+done
+SYSIFACES="${TEMPIFS[@]}"
+echo "SYSIFACES=$SYSIFACES"
+
+SYSIFACEC="$(echo ${SYSIFACES}|wc -w)"
+
+# figure out 
+FREE="$( df -k ${DATAMOUNT} | awk '{print $4}' | tail -1 )"
+COUNT="$( expr ${FREE} / 1000 / ${MBYTES} / ${SYSIFACEC} )"
+
+if [ ${COUNT} -lt 2 ];
+then
+   exit 255
+fi
+
+for IFACE in ${SYSIFACES}
+do
+	# Check for vlan interfaces
+	IND="${#REALIFACES[@]}"           #Always a pointer to the 'next' available slot in zero-based counting. :-)
+	USE_VLAN="$(doalarm 5 tcpdump -i ${IFACE} -e -X -c 1 2>&1 | grep -i 802.1Q)"
+	USE_VLAN="${USE_VLAN##*802.1Q*}"
+	REALIFACES[$IND]="${IFACE}"
+	if [ -z "${USE_VLAN}" ];
+	then
+		VLAN_ID="$(doalarm 5 tcpdump -i ${IFACE} -X -c 1 2>&1 | grep vlan | cut -f 1 -d, | awk '{print $3}' )"
+		if [ -n "${VLAN_ID}" ]; then
+			REALIFACES[$IND]="${IFACE}.${VLAN_ID}"
+			NEEDVLANMOD=1
+		fi
+	fi
+done
+
+if [ ${NEEDVLANMOD} -eq 1 ];
+then
+	modprobe -Q 8021q
+fi
+
+> ${DATAMOUNT}/.sniffer/pids
+
+for i in $(seq 0 $((${#REALIFACES[@]} - 1)))
+do
+#	echo "found ${REALIFACES[i]}"  # DEBUG
+
+	exists="$( ip link show ${REALIFACES[i]} 2>&1 | grep UP | awk '{print $3}')"
+	if [ -z "${exists}" ]; then
+		# This interface doesn't yet exist? Probably a VLAN, so bring it up
+		VLANID="${REALIFACES[i]##*.}"
+		ETHIF="${REALIFACES[i]%%.*}"
+		if [ -n "${VLANID}" ]; then
+			vconfig add ${ETHIF} ${VLANID}
+# adding a vlan mungs the parent interface, and this -should- restore it but doesn't.
+#			vconfig set_flag ${ETHIF}.${VLANID} REORDER_HDR 0
+			ifconfig ${ETHIF}.${VLANID} up
+		fi
+	fi
+
+	# okay, the link to be promiscuous, if not already
+	ETH_OK=0
+
+	ethstat="$( ip link show ${REALIFACES[i]} 2>&1)"
+	ethstat="${ethstat##*PROMISC*}"
+	if [ -n "${ethstat}" ]; then
+		ifconfig ${REALIFACES[i]} promisc >/dev/null 2>&1
+		ETH_OK=$?
+	fi
+
+	if [ "${ETH_OK:-255}" -eq 0 ]; then
+		tpid="$(ps -ef | grep tshark | grep ${REALIFACES[i]} | awk '{print $2}')"
+
+		if [ -z "${tpid}" ]; then
+			if [ -n "${FILTER}" ];
+			then
+				/root/bin/sipcapper -c ${FILTER} -i ${REALIFACES[i]} -a ${MBYTES}000 -b ${COUNT} &
+				stat=$?
+			else
+				tshark -i ${REALIFACES[i]} -a filesize:${MBYTES}000 -b files:${COUNT} -n -q -w ${DATAMOUNT}/${REALIFACES[i]}.cap &
+				stat=$?
+			fi
+			# Sleep so that we can get the pid
+			sleep 3
+
+			tpid="$(ps -ef | grep "tshark.*${REALIFACES[i]} " | awk '{print $2}')"
+			if [ -n "${tpid}" ]; then
+				echo "${tpid}" >> ${DATAMOUNT}/.sniffer/pids
+				touch ${DATAMOUNT}/.sniffer/running
+			fi
+		fi
+	fi
+done
+
+# echo "capture running on ${#REALIFACES[@]} interface(s), max ${COUNT} ${MBYTES}MB files per interface"
+
+exit 0

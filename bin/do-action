@@ -1,0 +1,163 @@
+#!/bin/bash
+PROG="${0##*/}"
+DO_RETURN=${SHLVL}
+LOCKFILE=/var/run/do-action.lck
+
+trap do_exit SIGINT SIGTERM SIGKILL SIGQUIT SIGABRT SIGSTOP SIGSEGV
+
+#exit 1
+########
+#    stinkin subroutines...
+
+do_exit()
+{
+        STATUS=${1:-0}
+        REASON=${2}
+
+        [[ -n "${REASON}" ]] && logger -s -p kern.info  "do-action: ${REASON}"
+
+        [[ ${DO_RETURN} -eq 1 ]] && return $STATUS || exit $STATUS
+}
+
+is_running()
+{
+	RUNNING=0
+	[[ ! -s /data/.sniffer/pids ]] && rm -f /data/.sniffer/pids
+	[[ -z "$(egrep '[0-9]+' /data/.sniffer/pids)" ]] && rm -f /data/.sniffer/pids
+
+	if [ ! -r /data/.sniffer/pids -a -r /data/.sniffer/running ];
+	then
+		rm -f /data/.sniffer/running
+	fi
+
+	if [ -r /data/.sniffer/pids ];
+	then
+		for PID in $(cat /data/.sniffer/pids 2>/dev/null);
+		do
+			PROC=$(ps --no-heading -p ${PID})
+			if [ -z "${PROC}" ];
+			then
+				RUNNING=$(( RUNNING + 1 ))
+			fi
+		done
+		if [ ${RUNNING} -ne 0 ];
+		then
+			rm -f /data/.sniffer/pids
+		fi
+	fi
+
+}
+
+do_action()
+{
+	if [ "${ACTION}" = "stop" ];
+	then
+	    # always force stop
+	    touch /data/.sniffer/halt
+	    killall -9 tshark >/dev/null 2>&1
+	    sleep 1
+	    rm -f /data/.sniffer/action /data/.sniffer/running /data/.sniffer/pids
+
+	elif [ -z "${ACTION##*filter*}" ];
+	then
+		#Select a different filter
+		FILTER=${ACTION##filter }
+		if [ -n "${FILTER}" ]
+		then
+			TMP=/tmp
+			TEMP=/tmp
+			whoami > /tmp/whoami
+			sudo sed -i "s/^FILTER=.*/FILTER=$FILTER/" /root/bin/slr-cap
+		else
+			logger -s -p kern.info "Change filter requested, but none given"
+		fi
+	        rm -f /data/.sniffer/action
+		
+	elif [ "${ACTION}" = "start" ];
+	then
+#	    /root/bin/squeezeme
+	    is_running
+	    if [ ${RUNNING} -eq 0 ];
+	    then
+		    rm -f /data/.sniffer/halt
+		    /root/bin/slr-cap
+		    if [ $? -eq 0 ];
+		    then
+		        rm -f /data/.sniffer/startup
+			rm -f /data/.sniffer/action
+		    elif [ $? -eq 255 ];
+		    then
+		        touch /data/.sniffer/halt
+		        echo "No disk space available. Purge or delete capture files to make room." > /data/.sniffer/startup
+		    else
+		        touch /data/.sniffer/halt
+		        echo "Problems starting sniffer process, contact administrator" > /data/.sniffer/startup
+		    fi
+	    fi
+	fi
+
+}
+
+check_lockfile() {
+	if [ -r ${LOCKFILE} ]
+	then
+		oldpid=$(cat ${LOCKFILE})
+		procs=$(pgrep -F ${LOCKFILE} -l)
+		if [ -n "${procs}" -a -z "${procs##*$PROG*}" ]
+		then
+			do_exit 1 "already running"
+		else
+			#stale
+			rm -f ${LOCKFILE}
+		fi
+	fi
+
+	if [ ! -r ${LOCKFILE} ];
+	then
+		touch ${LOCKFILE} || do_exit 1 "Can't write the lockfile. System failure imminent."
+		echo "$$" > ${LOCKFILE}		#our current PID goes in the lockfile
+	fi
+}
+
+
+###########
+# Always do this:
+
+check_lockfile
+
+touch --no-create /data/keep >/dev/null 2>&1
+STATUS=$?
+if [ 0 -lt ${STATUS} ];
+then
+	# /data went read-only, which is bad. Reboot to fix
+	logger -s -p kern.crit "test: /data partition errored, rebooting to fix"
+	sync; sync; sync
+	sleep 5
+	/sbin/init 6
+else
+	dfk=$(df -k /data | grep /data | awk '{print $5}')
+	logger -s -p kern.info "disk: /data at ${dfk} utilization" 2>/dev/null
+fi
+
+chgrp -f www-data /data /data/keep /data/.sniffer /data/.sniffer/* /root/keep /root/keep/eth* /data/eth* >/dev/null 2>&1
+chmod -f g+wr /data/keep /data/.sniffer /data/.sniffer/* /root/keep /root/keep/eth* /data/eth* >/dev/null 2>&1
+chmod -f 775 /data/keep >/dev/null 2>&1
+
+if [ ! -r /data/.sniffer/pids ]
+then
+	echo "$(ps --no-heading -C tshark | grep -Po '^\d+')" >> /data/.sniffer/pids
+fi
+
+if [ -r /data/.sniffer/action ];
+then
+   ACTION=$(cat /data/.sniffer/action)
+   do_action;
+fi
+
+ARC=$(find /data/keep -name "eth*.cap" | wc -l)
+if [ ${ARC} -gt 0 ];
+then
+   nohup /root/bin/archive >/dev/null 2>&1 &
+fi
+
+rm -f ${LOCKFILE}

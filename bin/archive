@@ -1,0 +1,15 @@
+#!/bin/bash
+
+if [ ! -r /data/.sniffer/archiving ];
+then
+	touch /data/.sniffer/archiving
+
+    for FILE in /data/keep/eth*.cap
+    do
+       NF=$(basename ${FILE})
+       gzip -9cq $FILE > /root/keep/$NF.gz
+       rm -f $FILE
+    done
+
+	rm -f /data/.sniffer/archiving
+fi

@@ -1,0 +1,30 @@
+#!/bin/bash
+
+CWD=$(pwd)
+cd /data
+
+if [ ! -r .squeezing ];
+then
+	if [ ! -r .halt ];
+	then
+	    # echo "sniffers not halted"
+	    exit 1
+	fi
+
+	touch .squeezing
+
+	FILES=$(ls eth*.cap >/dev/null 2>&1)
+	STAT=$?
+
+	if [ ${STAT} -eq 0 ];
+	then
+
+		for i in eth*.cap; do
+		  gzip -q9 $i
+		done
+	fi
+
+	rm -f .squeezing
+fi
+
+cd $CWD

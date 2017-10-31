@@ -1,0 +1,264 @@
+#!/bin/bash
+
+###  CUST PBX are typically /30's, assigned by CSD
+
+##############
+C5SWITCH="net 10.14.255.0/26"
+SBC_OUTSIDE="net 192.0.2.0/27"
+
+###  SBC CORE is a /32, assigned by Circuit Engineering
+
+CUSTNO=1
+CUSTOMER[$CUSTNO]="allcusts"
+LONGNAME[$CUSTNO]="All Customers (no filtering)"
+SBC_INSIDE[$CUSTNO]="net 10.14.0.0/20"
+CUST_PBX[$CUSTNO]="net 10.105.0.0/16"
+
+CUSTNO=$((CUSTNO +1))
+CUSTOMER[$CUSTNO]="sipprov1"
+LONGNAME[$CUSTNO]="All sipprov1"
+SBC_INSIDE[$CUSTNO]="net 10.16.160.0/22"
+CUST_PBX[$CUSTNO]="net 0.0.0.0/0"
+
+################
+
+CUSTNO=$((CUSTNO +1))
+CUSTOMER[$CUSTNO]="sipprov1lab"
+LONGNAME[$CUSTNO]="ISP sipprov1 Lab"
+SBC_INSIDE[$CUSTNO]="net 0.0.0.0/0"
+CUST_PBX[$CUSTNO]="net 10.18.75.96/29"
+
+CUSTNO=$((CUSTNO +1))
+CUSTOMER[$CUSTNO]="sipprov2lab"
+LONGNAME[$CUSTNO]="ISP sipprov2 Lab"
+SBC_INSIDE[$CUSTNO]="host 10.14.0.9"
+CUST_PBX[$CUSTNO]="net 10.105.0.0/29"
+
+CUSTNO=$((CUSTNO +1))
+CUSTOMER[$CUSTNO]="sipprov3lab"
+LONGNAME[$CUSTNO]="ISP sipprov3 Lab"
+SBC_INSIDE[$CUSTNO]="host 10.14.0.12"
+CUST_PBX[$CUSTNO]="net 10.105.0.0/29"
+
+CUSTNO=$((CUSTNO +1))
+CUSTOMER[$CUSTNO]="sipprov4lab"
+LONGNAME[$CUSTNO]="ISP sipprov4 Lab"
+SBC_INSIDE[$CUSTNO]="host 10.14.0.101"
+CUST_PBX[$CUSTNO]="net 10.237.155.140/30"
+
+CUSTNO=$((CUSTNO +1))
+CUSTOMER[$CUSTNO]="ISP_itdept"
+LONGNAME[$CUSTNO]="ISP ITdept"
+SBC_INSIDE[$CUSTNO]="( host 10.160.0.16 or host 10.15.134.8 )"
+CUST_PBX[$CUSTNO]="host 10.237.163.194"
+
+##############################
+
+# brooks1 will be disco'd after migrating to brooks2
+CUSTNO=$((CUSTNO +1))
+CUSTOMER[$CUSTNO]="cust1"
+LONGNAME[$CUSTNO]="Customer 1"
+SBC_INSIDE[$CUSTNO]="host 10.14.0.14"
+CUST_PBX[$CUSTNO]="net 10.105.0.8/30"
+
+CUSTNO=$((CUSTNO +1))
+CUSTOMER[$CUSTNO]="cust${CUSTNO}"
+LONGNAME[$CUSTNO]="Customer ${CUSTNO}"
+SBC_INSIDE[$CUSTNO]="host 10.14.0.21"
+CUST_PBX[$CUSTNO]="net 10.105.0.108/30"
+
+CUSTNO=$((CUSTNO +1))
+CUSTOMER[$CUSTNO]="cust${CUSTNO}"
+LONGNAME[$CUSTNO]="Customer ${CUSTNO}"
+SBC_INSIDE[$CUSTNO]="host 10.14.0.16"
+CUST_PBX[$CUSTNO]="net 10.105.0.16/30"
+
+CUSTNO=$((CUSTNO +1))
+CUSTOMER[$CUSTNO]="cust${CUSTNO}"
+LONGNAME[$CUSTNO]="Customer ${CUSTNO}"
+SBC_INSIDE[$CUSTNO]="host 10.14.0.18"
+CUST_PBX[$CUSTNO]="net 10.105.0.24/30"
+
+CUSTNO=$((CUSTNO +1))
+CUSTOMER[$CUSTNO]="cust${CUSTNO}"
+LONGNAME[$CUSTNO]="Customer ${CUSTNO}"
+SBC_INSIDE[$CUSTNO]="host 10.14.0.19"
+CUST_PBX[$CUSTNO]="net 10.105.0.28/30"
+
+CUSTNO=$((CUSTNO +1))
+CUSTOMER[$CUSTNO]="cust${CUSTNO}"
+LONGNAME[$CUSTNO]="Customer ${CUSTNO}"
+SBC_INSIDE[$CUSTNO]="host 10.14.0.20"
+CUST_PBX[$CUSTNO]="net 10.105.0.32/30"
+
+CUSTNO=$((CUSTNO +1))
+CUSTOMER[$CUSTNO]="cust${CUSTNO}"
+LONGNAME[$CUSTNO]="Customer ${CUSTNO}"
+SBC_INSIDE[$CUSTNO]="host 10.14.0.22"
+CUST_PBX[$CUSTNO]="net 10.105.0.44/30"
+
+CUSTNO=$((CUSTNO +1))
+CUSTOMER[$CUSTNO]="cust${CUSTNO}"
+LONGNAME[$CUSTNO]="Customer ${CUSTNO}"
+SBC_INSIDE[$CUSTNO]="host 10.14.0.25"
+CUST_PBX[$CUSTNO]="net 10.105.0.48/30"
+
+CUSTNO=$((CUSTNO +1))
+CUSTOMER[$CUSTNO]="cust${CUSTNO}"
+LONGNAME[$CUSTNO]="Customer ${CUSTNO}"
+SBC_INSIDE[$CUSTNO]="host 10.14.0.28"
+CUST_PBX[$CUSTNO]="net 10.105.0.60/30"
+
+CUSTNO=$((CUSTNO +1))
+CUSTOMER[$CUSTNO]="cust${CUSTNO}"
+LONGNAME[$CUSTNO]="Customer ${CUSTNO}"
+SBC_INSIDE[$CUSTNO]="host 10.14.0.32"
+CUST_PBX[$CUSTNO]="net 10.105.0.72/30"
+
+CUSTNO=$((CUSTNO +1))
+CUSTOMER[$CUSTNO]="cust${CUSTNO}"
+LONGNAME[$CUSTNO]="Customer ${CUSTNO}"
+SBC_INSIDE[$CUSTNO]="host 10.14.0.35"
+CUST_PBX[$CUSTNO]="net 10.105.0.88/30"
+
+CUSTNO=$((CUSTNO +1))
+CUSTOMER[$CUSTNO]="cust${CUSTNO}"
+LONGNAME[$CUSTNO]="Customer ${CUSTNO}"
+SBC_INSIDE[$CUSTNO]="host 10.14.0.42"
+CUST_PBX[$CUSTNO]="net 10.105.0.132/30"
+
+CUSTNO=$((CUSTNO +1))
+CUSTOMER[$CUSTNO]="cust${CUSTNO}"
+LONGNAME[$CUSTNO]="Customer ${CUSTNO}"
+SBC_INSIDE[$CUSTNO]="host 10.14.0.44"
+CUST_PBX[$CUSTNO]="net 10.105.0.140/30"
+
+CUSTNO=$((CUSTNO +1))
+CUSTOMER[$CUSTNO]="cust${CUSTNO}"
+LONGNAME[$CUSTNO]="Customer ${CUSTNO}"
+SBC_INSIDE[$CUSTNO]="host 10.14.0.45"
+CUST_PBX[$CUSTNO]="net 10.105.0.12/30"
+
+CUSTNO=$((CUSTNO +1))
+CUSTOMER[$CUSTNO]="cust${CUSTNO}"
+LONGNAME[$CUSTNO]="Customer ${CUSTNO}"
+SBC_INSIDE[$CUSTNO]="host 10.14.0.53"
+CUST_PBX[$CUSTNO]="net 10.105.0.164/30"
+
+
+show_customers() {
+	for i in $(seq 1 $CUSTNO)
+	do
+		echo "${CUSTOMER[$i]} - ${LONGNAME[$i]}"
+		echo "   SBC- ${SBC_INSIDE[$i]}"
+		echo "   PBX- ${CUST_PBX[$i]}"
+		echo ""
+	done
+	
+	exit 1
+}
+
+shortlist() {
+	for i in $(seq 1 $CUSTNO)
+	do
+		echo "${CUSTOMER[$i]} - ${LONGNAME[$i]}"
+	done
+	
+	exit 1
+}
+
+#############################################################
+PROG="${0##*/}"
+TS=$(date +"%Y%m%d%H%S")
+SAVE="-q"
+
+usage() {
+        echo "$PROG [dvnhlL] [-a bytes] [-b count] [-c customer] [-i interface]"
+        echo -e "\t -i [iface] \t force a specific interface [iface]"
+        echo -e "\t -a [bytes] \t maximum filesize in [bytes]"
+        echo -e "\t -b [count] \t maximum [count] of files"
+	echo -e "\t -c [customer] \t select specific [customer]"
+        echo -e "\t -D \t\t Don't run tcpdump, just display the command"
+        echo -e "\t -d \t\t debug mode [always display captured packets]"
+        echo -e "\t -v \t\t verbose packet display [sets debug mode]"
+	echo -e "\t -l \t\t list all customers and info"
+	echo -e "\t -L \t\t list just customer names and aliases"
+        echo -e "\t -n \t\t no save [disables automatic capturefiles]"
+        echo -e "\t -h \t\t this help"
+
+        exit 1
+}
+
+while getopts "vdDnhLli:a:b:c:" param; do
+ case $param in
+  D) DBG="echo" ;;
+  d) DEBUG="-S" ;;
+  v) DEBUG="-S -V" ;;
+  a) FSIZE=$OPTARG ;;
+  b) FCOUNT=$OPTARG ;;
+  i) IFACE=$OPTARG ;;
+  c) CUST=$OPTARG ;;
+  n) SAVE="" ;;
+  l) show_customers ;;
+  L) shortlist  ;;
+  h) usage ;;
+  *) echo "Invalid option detected"; usage ;;
+ esac
+done 
+
+IFACE=${IFACE:-eth1}
+CUST=${CUST:-allcusts}
+
+for i in ${!CUSTOMER[*]}
+do 
+	if [ "$CUST" = "${CUSTOMER[$i]}" ]
+	then
+		IDX=$i
+		break
+	fi
+done
+
+if [ -z "${CUSTOMER[$IDX]}" ]
+then
+	echo "invalid customer"
+	exit 1
+fi
+
+if [ -n "${FSIZE}" -o -n "${FCOUNT}" ];
+then
+	FILESIZE="-a filesize:${FSIZE:-512000} -b files:${FCOUNT:-32}"
+fi
+
+if [ -n "${SAVE}" ];
+then
+	if [ -z "${FILESIZE}" ];
+	then
+		SAVE="-q -w /data/${IFACE}-${CUST}-${TS}.cap"
+	else
+		SAVE="-q -w /data/${IFACE}-${CUST}.cap"
+	fi
+fi
+
+CPBX=${CUST_PBX[$IDX]}
+ISBC=${SBC_INSIDE[$IDX]}
+
+if [ "${CUST}" = "sipprov1" ]
+then
+	C4SWITCH="net 10.18.75.0/27"
+	SBC_OUTSIDE="net 10.237.163.192/29"
+elif [ "${CUST}" = "ISP_itdept" ]
+then
+	SBC_OUTSIDE=""
+	CPBX="net 10.160.0.16/31"
+	C5SWITCH=""
+	ISBC="host 10.15.134.8"
+	C4SWITCH=""
+fi
+
+
+
+
+${DBG} tshark -i ${IFACE} -n ${DEBUG} ${SAVE} ${FILESIZE} -f "( ip or icmp ) and ( \
+	( $CPBX ${SBC_OUTSIDE:+and $SBC_OUTSIDE} ) or \
+	( ${ISBC} ${C5SWITCH:+and $C5SWITCH} ) \
+	${C4SWITCH:+or $C4SWITCH} )"
