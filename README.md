@@ -4,6 +4,8 @@ This is a very basic web-based control for a websniffer.  It supports up to two 
 Captures are done in a ring, so that files never exceed a max size, and are sized so as to not
 quite fill up the entire drive.  Other than that, it'll capture and rotate in perpetuity.
 
+It requires tshark, perl, and some form of web-server with cgi support.
+
 This is currently used for capturing mgcp/sip voice streams, but you can adapt it fairly easily.  
 
 Lots could be done to clean this up, but i'll leave that to you, dear visitor.  
@@ -23,7 +25,7 @@ Lots could be done to clean this up, but i'll leave that to you, dear visitor.
 These files were not created by me, and I have lost the attribution for them.  
 Please contact me if they're yours!  
   
-* cgi/rtpanalysis.cgi	- a CGI inteface into voice analysis of captured data  
+* cgi/rtpanalysis.cgi	- a CGI interface into tshark's voice analysis of captured data  
   
 * bin/analyseCalls.sh	- this is a manual method of parsing captured files for voice quality issues, and calls the following two scripts:  
  -- bin/qual.pl  
