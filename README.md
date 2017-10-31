@@ -16,10 +16,13 @@ bin/squeezeme		- called by do-action, this compresses archived capture files
 bin/sipcapper		- a script that's used to set the capture filter based on customer name  
 bin/slr-cap		- called by do-action, this script performs the actual capture, based on the ACL provided by sipcapper  
 
+cgi/rtpanalysis.cgi	- a CGI inteface into voice analysis of captured data  
+cgi/websniff.cgi	- the CGI interface for controlling the packet capture and data file management  
 
+
+These files were not created by me, and I have lost the attribution for them.
+Please contact me if they're yours!
 bin/analyseCalls.sh	- this is a manual method of parsing captured files for voice quality issues, and calls the following two scripts:  
  - bin/qual.pl  
  - bin/grabAudio.pl  
 
-cgi/rtpanalysis.cgi	- a CGI inteface into voice analysis of captured data  
-cgi/websniff.cgi	- the CGI interface for controlling the packet capture and data file management  
