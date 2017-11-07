@@ -30,19 +30,22 @@ is_running()
 		rm -f /data/.sniffer/running
 	fi
 
+	[[ ! -e /data/.sniffer/pids ]] && pgrep tshark > /data/.sniffer/pids
+
 	if [ -r /data/.sniffer/pids ];
 	then
-		for PID in $(cat /data/.sniffer/pids 2>/dev/null);
+		for PID in $(egrep '[0-9]+' /data/.sniffer/pids);
 		do
 			PROC=$(ps --no-heading -p ${PID})
-			if [ -z "${PROC}" ];
+			if [ -n "${PROC}" ];
 			then
 				RUNNING=$(( RUNNING + 1 ))
 			fi
 		done
 		if [ ${RUNNING} -ne 0 ];
 		then
-			rm -f /data/.sniffer/pids
+			rm -f /data/.sniffer/halt
+			touch /data/.sniffer/running
 		fi
 	fi
 
@@ -124,7 +127,8 @@ check_lockfile() {
 # Always do this:
 
 check_lockfile
-
+#fixup the pidfile
+is_running
 touch --no-create /data/keep >/dev/null 2>&1
 STATUS=$?
 if [ 0 -lt ${STATUS} ];
