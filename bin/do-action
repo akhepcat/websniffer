@@ -23,18 +23,19 @@ is_running()
 {
 	RUNNING=0
 	[[ ! -s /data/.sniffer/pids ]] && rm -f /data/.sniffer/pids
-	[[ -z "$(egrep '[0-9]+' /data/.sniffer/pids)" ]] && rm -f /data/.sniffer/pids
-
-	if [ ! -r /data/.sniffer/pids -a -r /data/.sniffer/running ];
+	if [ -r /data/.sniffer/running ];
 	then
-		rm -f /data/.sniffer/running
+		if [ ! -s /data/.sniffer/pids ];
+		then
+			pgrep tshark > /data/.sniffer/pids
+		fi
 	fi
 
-	[[ ! -e /data/.sniffer/pids ]] && pgrep tshark > /data/.sniffer/pids
+	[[ -z "$(egrep '[0-9]+' /data/.sniffer/pids 2>/dev/null)" ]] && rm -f /data/.sniffer/pids
 
 	if [ -r /data/.sniffer/pids ];
 	then
-		for PID in $(egrep '[0-9]+' /data/.sniffer/pids);
+		for PID in $(egrep '[0-9]+' /data/.sniffer/pids 2>/dev/null);
 		do
 			PROC=$(ps --no-heading -p ${PID})
 			if [ -n "${PROC}" ];
@@ -58,7 +59,7 @@ do_action()
 	    # always force stop
 	    touch /data/.sniffer/halt
 	    killall -9 tshark >/dev/null 2>&1
-	    sleep 1
+	    sleep 3
 	    rm -f /data/.sniffer/action /data/.sniffer/running /data/.sniffer/pids
 
 	elif [ -z "${ACTION##*filter*}" ];
@@ -91,11 +92,15 @@ do_action()
 		    elif [ $? -eq 255 ];
 		    then
 		        touch /data/.sniffer/halt
+		        rm -f /data/.sniffer/action /data/.sniffer/running /data/.sniffer/pids
 		        echo "No disk space available. Purge or delete capture files to make room." > /data/.sniffer/startup
 		    else
 		        touch /data/.sniffer/halt
+		        rm -f /data/.sniffer/action /data/.sniffer/running /data/.sniffer/pids
 		        echo "Problems starting sniffer process, contact administrator" > /data/.sniffer/startup
 		    fi
+	    else
+		    rm -f /data/.sniffer/action
 	    fi
 	fi
 
@@ -147,10 +152,10 @@ chgrp -f www-data /data /data/keep /data/.sniffer /data/.sniffer/* /root/keep /r
 chmod -f g+wr /data/keep /data/.sniffer /data/.sniffer/* /root/keep /root/keep/eth* /data/eth* >/dev/null 2>&1
 chmod -f 775 /data/keep >/dev/null 2>&1
 
-if [ ! -r /data/.sniffer/pids ]
-then
-	echo "$(ps --no-heading -C tshark | grep -Po '^\d+')" >> /data/.sniffer/pids
-fi
+#if [ ! -r /data/.sniffer/pids ]
+#then
+#	echo "$(ps --no-heading -C tshark | grep -Po '^\d+')" >> /data/.sniffer/pids
+#fi
 
 if [ -r /data/.sniffer/action ];
 then

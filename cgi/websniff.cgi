@@ -158,6 +158,10 @@ exit;
 ##########################################################
 
 
+sub dirsort {
+    ($a =~ /_(\d+)\./)[0] <=> ($b =~ /_(\d+)\./)[0];
+}
+
 sub do_server()
 {
 my($action) = @_;
@@ -445,7 +449,11 @@ if ( ! length($mounted) ) {
   @eth1s = glob("eth1*");
 
   $i=0;
-  foreach $file (sort @eth1s) {
+
+# scrmable.pl:          @w = sort { $tt{$a} <=> $tt{$b}; } @w;
+#        topn:     for $key( sort { $values{$b} <=> $values{$a} } keys %values ) {
+
+  foreach $file (sort dirsort @eth1s) {
       if (!defined($file) || (! length($file) > 0) ) {
          $file="";
       }
@@ -455,7 +463,7 @@ if ( ! length($mounted) ) {
 
   $i=0;
   @eth2s = sort glob("eth2*");
-  foreach $file (sort @eth2s) {
+  foreach $file (sort dirsort @eth2s) {
       if (!defined($file) || (! length($file) > 0) ) {
          $file="";
       }
